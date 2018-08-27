@@ -1,6 +1,7 @@
 defmodule SlackVerify do
 
   import Plug.Conn
+  require Logger
 
   @moduledoc """
   SlackVerify is a plug for verifying the
@@ -24,7 +25,11 @@ defmodule SlackVerify do
 
         hmac = sha256(slack_signing_secret, sig_basestring)
         if valid_signature?(hmac, signature),
-          do: conn, else: halt(conn)
+          do: conn, else: conn |> put_status(401) |> halt()
+
+      {:error, reason} ->
+        Logger.error("Could not read request body: #{reason}")
+        conn |> put_status(400) |> halt()
     end
   end
 
