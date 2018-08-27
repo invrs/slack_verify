@@ -18,7 +18,7 @@ defmodule SlackVerify do
   def call(conn, opts) do
     slack_signing_secret = Keyword.fetch!(opts, :slack_signing_secret)
     IO.inspect(conn)
-    case Plug.Conn.read_body(conn) do
+    case Plug.Conn.read_body(conn) |> IO.inspect() do
       {:ok, body, conn} ->
         { signature, timestamp } = get_headers(conn)
         sig_basestring = Enum.join([@version, timestamp, body], ":")
