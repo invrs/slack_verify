@@ -4,8 +4,10 @@ defmodule SlackVerify.MixProject do
   def project do
     [
       app: :slack_verify,
+      description: description(),
       version: "0.1.0",
       elixir: "~> 1.6",
+      package: package(),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -23,7 +25,29 @@ defmodule SlackVerify.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
-      {:plug, "~> 1.6"}
+      {:plug, "~> 1.6"},
+
+      {:ex_doc, "~> 0.18.0", only: :dev}
+    ]
+  end
+
+  defp description do
+    """
+    An elixir plug that verifies Slack requests per
+    Slack's verification protocol:
+    https://api.slack.com/docs/verifying-requests-from-slack
+    """
+  end
+
+  defp package do
+    [
+      files: ~w(lib mix.exs README.md LICENSE CHANGELOG.md),
+      maintainers: ["Clayton Gentry"],
+      licenses: ["Apache 2.0"],
+      links: %{
+        "Github" => "http://github.com/invrs/slack_verify",
+        "Docs"   => "http://hexdocs.pm/slack_verify",
+      }
     ]
   end
 end
