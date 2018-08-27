@@ -5,7 +5,7 @@ defmodule SlackVerify.MixProject do
     [
       app: :slack_verify,
       description: description(),
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.4",
       package: package(),
       start_permanent: Mix.env() == :prod,
