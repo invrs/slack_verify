@@ -15,32 +15,25 @@ defmodule SlackVerify do
 
   def init(opts), do: opts
 
-  def call(conn, opts) do
-    slack_signing_secret = Keyword.fetch!(opts, :slack_signing_secret)
+  def call(conn, _opts) do
+    {[ signature ], [ timestamp ]} = get_headers(conn)
+    slack_signing_secret           =
+      Application.get_env(:slack_verify, :slack_signing_secret)
 
-    case Plug.Conn.read_body(conn) do
-      {:ok, body, conn} ->
-        { signature, timestamp } = get_headers(conn)
-        sig_basestring = Enum.join([@version, timestamp, body], ":")
+    sig_basestring =
+      [@version, timestamp, conn.assigns.raw_body]
+      |> Enum.join(":")
 
-        hmac = sha256(slack_signing_secret, sig_basestring)
-        if valid_signature?(hmac, signature),
-          do: conn, else: conn |> put_status(401) |> halt()
-
-      {:error, reason} ->
-        Logger.error("Could not read request body: #{reason}")
-        conn |> put_status(400) |> halt()
+    case "#{@version}=#{sha256(slack_signing_secret, sig_basestring)}" do
+      ^signature -> conn
+      _fail      -> conn |> put_status(401) |> halt()
     end
   end
-
-  defp valid_signature?(hmac, [ signature ]),
-    do: String.downcase("#{@version}=#{hmac}") == signature
-  defp valid_signature?(_hmac, _signature), do: false
 
   defp sha256(key, string) do
     :sha256
     |> :crypto.hmac(key, string)
-    |> Base.encode16
+    |> Base.encode16(case: :lower)
   end
 
   defp get_headers(conn) do
