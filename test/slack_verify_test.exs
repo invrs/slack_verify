@@ -9,8 +9,9 @@ defmodule SlackVerifyTest do
 
   test "verifies a Slack request" do
     body = File.read!("./test/fixtures/body.txt") |> String.trim()
+    conn = conn(:post, "/", %{})
     conn =
-      conn(:post, "/", body)
+      update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
       |> put_req_header("x-slack-request-timestamp", "1531420618")
       |> put_req_header("x-slack-signature", @signature)
 
