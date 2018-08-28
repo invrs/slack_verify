@@ -23,4 +23,19 @@ defmodule SlackVerifyTest do
 
     refute conn.halted
   end
+
+  test "halts invalid Slack request" do
+    body = File.read!("./test/fixtures/body.txt") |> String.trim()
+    bad_signature = String.replace(@signature, "a", "b")
+
+    conn = conn(:post, "/", %{})
+    conn =
+      update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
+      |> put_req_header("x-slack-request-timestamp", "1531420618")
+      |> put_req_header("x-slack-signature", bad_signature)
+
+    conn = SlackVerify.call(conn, [])
+    assert conn.halted
+    assert conn.status == 401
+  end
 end
