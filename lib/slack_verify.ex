@@ -16,6 +16,8 @@ defmodule SlackVerify do
   def init(opts), do: opts
 
   def call(conn, opts) do
+    IO.puts("CALLED VERIFY WITH OPTS: ")
+    IO.inspect(opts)
     slack_signing_secret           = Keyword.fetch!(opts, :slack_signing_secret)
     {[ signature ], [ timestamp ]} = get_headers(conn)
 
