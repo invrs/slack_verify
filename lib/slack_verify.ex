@@ -15,11 +15,10 @@ defmodule SlackVerify do
 
   def init(opts), do: opts
 
-  def call(conn, opts) do
-    IO.puts("CALLED VERIFY WITH OPTS: ")
-    IO.inspect(opts)
-    slack_signing_secret           = Keyword.fetch!(opts, :slack_signing_secret)
+  def call(conn, _opts) do
     {[ signature ], [ timestamp ]} = get_headers(conn)
+    slack_signing_secret           =
+      Application.get_env(:slack_verify, :slack_signing_secret)
 
     sig_basestring =
       [@version, timestamp, conn.assigns.raw_body]
