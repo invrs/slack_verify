@@ -12,7 +12,20 @@ defmodule SlackVerifyTest do
   end
 
   test "verifies a Slack request" do
-    body = File.read!("./test/fixtures/body.txt") |> String.trim()
+    body = load_body()
+    conn = conn(:post, "/", %{})
+    conn =
+      update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
+      |> put_req_header("x-slack-request-timestamp", "1531420618")
+      |> put_req_header("x-slack-signature", @signature)
+
+    conn = SlackVerify.call(conn, [check_timestamp?: false])
+
+    refute conn.halted
+  end
+
+  test "invalidates requests with stale timestamp" do
+    body = load_body()
     conn = conn(:post, "/", %{})
     conn =
       update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
@@ -21,11 +34,12 @@ defmodule SlackVerifyTest do
 
     conn = SlackVerify.call(conn, [])
 
-    refute conn.halted
+    assert conn.halted
+    assert conn.status == 401
   end
 
   test "halts invalid Slack request" do
-    body = File.read!("./test/fixtures/body.txt") |> String.trim()
+    body = load_body()
     bad_signature = String.replace(@signature, "a", "b")
 
     conn = conn(:post, "/", %{})
@@ -34,8 +48,12 @@ defmodule SlackVerifyTest do
       |> put_req_header("x-slack-request-timestamp", "1531420618")
       |> put_req_header("x-slack-signature", bad_signature)
 
-    conn = SlackVerify.call(conn, [])
+    conn = SlackVerify.call(conn, [check_timestamp?: false])
     assert conn.halted
     assert conn.status == 401
+  end
+
+  defp load_body do
+     File.read!("./test/fixtures/body.txt") |> String.trim()
   end
 end

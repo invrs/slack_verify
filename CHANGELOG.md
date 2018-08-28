@@ -1,5 +1,8 @@
 # Changelog
 
+## v.0.2.1
+* Ensure timestamp header is less than five minutes apart from now.
+
 ## v.0.2.0
 * Load secret at runtime
 * Read raw request body
