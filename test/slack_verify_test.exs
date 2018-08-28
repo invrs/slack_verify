@@ -7,6 +7,10 @@ defmodule SlackVerifyTest do
   @secret "8f742231b10e8888abcd99yyyzzz85a5"
   @signature "v0=a2114d57b48eac39b9ad189dd8316235a7b4a8d21a10bd27519666489c69b503"
 
+  setup do
+    Application.put_env(:slack_verify, :slack_signing_secret, @secret)
+  end
+
   test "verifies a Slack request" do
     body = File.read!("./test/fixtures/body.txt") |> String.trim()
     conn = conn(:post, "/", %{})
@@ -15,9 +19,23 @@ defmodule SlackVerifyTest do
       |> put_req_header("x-slack-request-timestamp", "1531420618")
       |> put_req_header("x-slack-signature", @signature)
 
-    opts = SlackVerify.init([slack_signing_secret: @secret])
-    conn = SlackVerify.call(conn, opts)
+    conn = SlackVerify.call(conn, [])
 
     refute conn.halted
+  end
+
+  test "halts invalid Slack request" do
+    body = File.read!("./test/fixtures/body.txt") |> String.trim()
+    bad_signature = String.replace(@signature, "a", "b")
+
+    conn = conn(:post, "/", %{})
+    conn =
+      update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
+      |> put_req_header("x-slack-request-timestamp", "1531420618")
+      |> put_req_header("x-slack-signature", bad_signature)
+
+    conn = SlackVerify.call(conn, [])
+    assert conn.halted
+    assert conn.status == 401
   end
 end
