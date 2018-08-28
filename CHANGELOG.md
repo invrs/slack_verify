@@ -1,5 +1,9 @@
 # Changelog
 
+## v.0.2.0
+* Load secret at runtime
+* Read raw request body
+
 ## v.0.1.1
 * Relax plug requirement
 
