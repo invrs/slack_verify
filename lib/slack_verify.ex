@@ -29,11 +29,26 @@ defmodule SlackVerify do
       [@version, timestamp, conn.assigns.raw_body]
       |> Enum.join(":")
 
-    case "#{@version}=#{sha256(slack_signing_secret, sig_basestring)}" do
-      ^signature -> check_timestamp(conn, timestamp, opts)
-      _fail      -> conn |> put_status(401) |> halt()
+    unless is_nil(slack_signing_secret) do
+
+      case "#{@version}=#{sha256(slack_signing_secret, sig_basestring)}" do
+        ^signature -> check_timestamp(conn, timestamp, opts)
+        _fail      -> fail(conn)
+      end
+
+    else
+      """
+      Slack signing secret is missing. Please configure a secret in your
+      config.exs in the form
+      config :slack_verify, slack_signing_secret: <my_secret>
+      """
+      |> Logger.error()
+
+      fail(conn)
     end
   end
+
+  defp fail(conn), do: conn |> put_status(401) |> halt()
 
   defp check_timestamp(conn, _timestamp, [check_timestamp?: false]), do: conn
   defp check_timestamp(conn, timestamp, _) do
@@ -41,11 +56,8 @@ defmodule SlackVerify do
     now       = DateTime.utc_now()
     max_diff  = 60 * 5 # five minutes
 
-    if abs(DateTime.diff(timestamp, now)) > max_diff do
-      conn |> put_status(401) |> halt()
-    else
-      conn
-    end
+    if abs(DateTime.diff(timestamp, now)) > max_diff,
+      do: fail(conn), else: conn
   end
 
   defp sha256(key, string) do

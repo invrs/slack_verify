@@ -1,5 +1,6 @@
 defmodule SlackVerifyTest do
   use ExUnit.Case, async: true
+  import ExUnit.CaptureLog
   import Plug.Conn, only: [ put_req_header: 3 ]
   use Plug.Test
 
@@ -51,6 +52,24 @@ defmodule SlackVerifyTest do
     conn = SlackVerify.call(conn, [check_timestamp?: false])
     assert conn.halted
     assert conn.status == 401
+  end
+
+  test "surfaces a helpful error if secret is nil or missing" do
+    Application.put_env(:slack_verify, :slack_signing_secret, nil)
+
+    body = load_body()
+    conn = conn(:post, "/", %{})
+    conn =
+      update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
+      |> put_req_header("x-slack-request-timestamp", "1531420618")
+      |> put_req_header("x-slack-signature", @signature)
+
+    assert capture_log(fn ->
+      conn = SlackVerify.call(conn, [])
+
+      assert conn.halted
+      assert conn.status == 401
+    end) =~ "Slack signing secret is missing"
   end
 
   defp load_body do
