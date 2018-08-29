@@ -1,5 +1,8 @@
 # Changelog
 
+## v.0.2.2
+* Surface a helpful error if signing secret is missing
+
 ## v.0.2.1
 * Ensure timestamp header is less than five minutes apart from now.
 
