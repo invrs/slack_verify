@@ -9,7 +9,7 @@ Installation is a five-step process.
 ```elixir
 def deps do
   [
-    {:slack_verify, "~> 0.2.1"}
+    {:slack_verify, "~> 0.2.2"}
   ]
 end
 ```
