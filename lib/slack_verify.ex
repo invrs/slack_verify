@@ -61,8 +61,7 @@ defmodule SlackVerify do
   end
 
   defp sha256(key, string) do
-    :sha256
-    |> :crypto.hmac(key, string)
+    :crypto.mac(:hmac, :sha256, key, string)
     |> Base.encode16(case: :lower)
   end
 
